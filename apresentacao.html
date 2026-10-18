@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Circuito RLC Série — Sinais e Sistemas</title>
+<style>
+:root{
+  --bg:#070b18; --panel:#10172e; --panel2:#18213f; --line:#2a3768; --txt:#e8ecff; --mut:#9aa7d4;
+  --R:#ef4444; --L:#3b82f6; --C:#22c55e; --Y:#a78bfa; --amber:#fbbf24; --cyan:#22d3ee; --pink:#f472b6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);
+  font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+
+/* ---------- palco 1280x720 escalonado ---------- */
+#stage{position:absolute;width:1280px;height:720px;transform-origin:top left;overflow:hidden;
+  background:radial-gradient(1100px 600px at 85% -10%,#18265a 0%,transparent 60%),
+             radial-gradient(900px 500px at -10% 110%,#1a1446 0%,transparent 55%),var(--bg);
+  border-radius:6px;box-shadow:0 10px 60px #000a}
+.slide{position:absolute;inset:0;padding:30px 56px 24px;opacity:0;pointer-events:none;
+  transform:translateX(24px);transition:opacity .35s,transform .35s}
+.slide.active{opacity:1;pointer-events:auto;transform:none}
+.kick{font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);font-weight:700}
+h1{font-size:34px;font-weight:700;margin:2px 0 14px;letter-spacing:-.01em}
+h1 small{font-size:18px;color:var(--mut);font-weight:500;margin-left:10px}
+p{line-height:1.5}
+.mut{color:var(--mut)}
+b,strong{color:#fff}
+
+[data-s]{opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .4s,transform .4s}
+[data-s].on{opacity:1;transform:none;pointer-events:auto}
+
+.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
+  border-radius:14px;padding:14px 18px}
+.card.glow{border-color:var(--amber);box-shadow:0 0 0 1px #fbbf2455,0 0 32px #fbbf2430}
+.lbl{font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:6px;
+  display:flex;align-items:center;gap:8px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;
+  background:var(--amber);color:#1a1300;font-size:13px;font-weight:800}
+.note{font-size:15px;color:var(--mut);margin-top:6px}
+.note b{color:var(--amber)}
+.row{display:flex;gap:18px}
+.col{display:flex;flex-direction:column;gap:14px}
+
+/* ---------- matemática (MathML) ---------- */
+math{font-family:'Cambria Math','STIX Two Math','Latin Modern Math','Noto Sans Math',serif;font-size:1.18em}
+.eq{text-align:center;font-size:26px}
+.eq.sm{font-size:21px}.eq.xs{font-size:18px}.eq.big{font-size:34px}
+.hl.hRe{color:var(--cyan)}.hl.hIm{color:var(--pink)}.hl.hA{color:var(--amber)}
+.hl.hR{color:#ff7b7b}.hl.hL{color:#7db1ff}.hl.hC{color:#4ade80}.hl.hY{color:#c4b5fd}
+.tex{display:inline}
+
+/* ---------- capa ---------- */
+#s1{display:flex;flex-direction:column;justify-content:center;padding-left:84px}
+#s1 .big{font-size:76px;font-weight:800;letter-spacing:-.03em;line-height:1.02;
+  background:linear-gradient(90deg,#fff,#a5b4fc 60%,#67e8f9);-webkit-background-clip:text;background-clip:text;color:transparent}
+#s1 .sub{font-size:28px;color:#c7d2fe;margin:14px 0 30px}
+#s1 .meta{font-size:17px;color:var(--mut);line-height:1.8;max-width:800px}
+#s1 .meta b{color:#dbe4ff}
+#coverSvg{position:absolute;right:-20px;top:70px;width:640px;height:420px;opacity:.9}
+#coverSvg path.c{fill:none;stroke:url(#gr);stroke-width:5;stroke-linecap:round;stroke-dasharray:1800;stroke-dashoffset:1800;
+  animation:draw 3.2s .3s ease-out forwards;filter:drop-shadow(0 0 12px #60a5fa)}
+#coverSvg path.p{fill:none;stroke:#34d399;stroke-width:4;stroke-linecap:round;stroke-dasharray:1800;stroke-dashoffset:1800;
+  animation:draw 3.2s .8s ease-out forwards;opacity:.8}
+@keyframes draw{to{stroke-dashoffset:0}}
+.roadmap{display:flex;flex-wrap:wrap;gap:8px;margin-top:34px;max-width:700px}
+.chip{padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:#ffffff0a;font-size:14px;color:#cbd5ff}
+.hintkey{position:absolute;left:84px;bottom:34px;color:var(--mut);font-size:15px}
+kbd{border:1px solid var(--line);background:#ffffff10;border-radius:6px;padding:1px 7px;font-family:inherit;font-size:13px}
+
+/* ---------- circuito ---------- */
+#circ{width:100%;height:auto;display:block}
+#circ .w{stroke:#cbd5e1;stroke-width:3.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+#circ .flow{stroke:var(--amber);stroke-width:5;stroke-linecap:round;stroke-dasharray:1 22;fill:none;animation:flow 1.2s linear infinite}
+#circ.paused .flow{animation-play-state:paused;opacity:.25}
+@keyframes flow{to{stroke-dashoffset:-23}}
+#circ .comp{cursor:pointer}
+#circ .comp .shape{stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round;transition:stroke-width .2s,filter .2s}
+#circ .comp:hover .shape,#circ .comp.sel .shape{stroke-width:6.5;filter:drop-shadow(0 0 8px currentColor)}
+#circ text{font-family:'Cambria Math','Times New Roman',serif;font-style:italic;fill:#e8ecff;font-size:26px}
+#circ .vlab{font-size:20px}
+#circ .hit{fill:transparent}
+#compinfo{min-height:78px;display:flex;align-items:center;justify-content:center;font-size:24px;text-align:center}
+#compinfo .ph{font-size:15px;color:var(--mut);font-family:inherit}
+.tbtn{background:#ffffff10;border:1px solid var(--line);border-radius:8px;padding:4px 12px;font-size:13px;color:var(--mut)}
+.tbtn:hover{color:#fff;border-color:var(--amber)}
+.pede li{margin:7px 0 7px 22px;line-height:1.45;font-size:17.5px}
+.pede li::marker{color:var(--amber);font-weight:800}
+
+/* ---------- modelagem ---------- */
+.mgrid{display:flex;flex-direction:column;gap:12px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+.legend span{font-size:14px;padding:4px 10px;border-radius:99px;border:1px solid}
+.legend .a{color:#7db1ff;border-color:#3b82f688}.legend .b{color:#ff7b7b;border-color:#ef444488}.legend .c{color:#4ade80;border-color:#22c55e88}
+
+/* ---------- etapas de dedução ---------- */
+.steps{display:flex;flex-direction:column;gap:12px}
+.maps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.maps .card{text-align:center;padding:10px 8px}
+.maps .arrow{color:var(--amber);font-size:22px;line-height:1}
+.pill{display:inline-block;padding:3px 12px;border-radius:99px;background:#fbbf2420;color:var(--amber);font-size:14px;font-weight:600;border:1px solid #fbbf2455}
+
+/* ---------- fasor ---------- */
+.phasor{width:480px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;
+  display:flex;flex-direction:column;gap:6px}
+.phasor canvas{width:456px;height:312px;border-radius:10px;background:#0b1126}
+.pctl{display:flex;align-items:center;gap:10px;font-size:15px}
+.pctl label{min-width:150px;color:var(--mut)}.pctl label b{color:var(--amber)}
+input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:99px;background:#2a3768;outline:none;flex:1}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--amber);
+  border:3px solid #1a1300;cursor:pointer;box-shadow:0 0 10px #fbbf2480}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--amber);border:3px solid #1a1300;cursor:pointer}
+.pread{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pc{background:#0b1126;border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:13px}
+.pc .k{display:block;color:var(--mut);font-size:12px}.pc .v{font-size:16px;font-weight:700}
+.snaps{display:flex;gap:6px}
+.snaps button{flex:1;padding:5px 4px;font-size:13px;background:#ffffff10;border:1px solid var(--line);border-radius:8px}
+.snaps button:hover,.snaps button.on{border-color:var(--amber);color:var(--amber)}
+.lim{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.lim .card{text-align:center;padding:10px}
+.lim .big{font-size:26px;font-weight:800;color:var(--green,#34d399)}
+.warn{border-left:4px solid var(--amber);background:#fbbf2410;padding:8px 14px;border-radius:0 10px 10px 0;font-size:15.5px}
+
+/* ---------- valores comerciais ---------- */
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.comp{border-radius:16px;padding:14px 18px;display:flex;align-items:center;gap:18px;border:2px solid}
+.comp .sym{font-family:'Cambria Math',serif;font-style:italic;font-size:54px;font-weight:700;line-height:1}
+.comp .val{font-size:34px;font-weight:800;line-height:1.05}
+.comp .sub{font-size:14px;color:var(--mut)}
+.comp.cR{border-color:#ef444499;background:#ef444414}.comp.cR .sym{color:var(--R)}
+.comp.cL{border-color:#3b82f699;background:#3b82f614}.comp.cL .sym{color:var(--L)}
+.comp.cC{border-color:#22c55e99;background:#22c55e14}.comp.cC .sym{color:var(--C)}
+.badges{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.bd{background:#0b1126;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.bd .k{font-size:13px;color:var(--mut)}
+.bd .v{font-size:22px;font-weight:800;color:var(--amber)}
+
+/* ---------- código ---------- */
+.codewrap{display:grid;grid-template-columns:1.12fr .88fr;gap:18px;height:600px}
+#code{background:#0a0f1f;border:1px solid var(--line);border-radius:14px;padding:10px 0;overflow-y:auto;height:100%;
+  font-family:'Cascadia Code','Consolas','Courier New',monospace;font-size:13px;line-height:19px;position:relative;scroll-behavior:smooth}
+#code::-webkit-scrollbar{width:8px}#code::-webkit-scrollbar-thumb{background:#2a3768;border-radius:8px}
+.ln{display:flex;white-space:pre;padding-right:10px;transition:opacity .3s,background .3s;opacity:1}
+.ln .no{width:40px;text-align:right;padding-right:12px;color:#4b5a8e;flex:none;user-select:none}
+.ln.dim{opacity:.3}.ln.act{background:#fbbf2414;box-shadow:inset 3px 0 0 var(--amber)}
+.tk-c{color:#6b7bb0;font-style:italic}.tk-s{color:#a5d6a7}.tk-k{color:#c792ea}.tk-n{color:#f78c6c}.tk-f{color:#82aaff}.tk-m{color:#ffcb6b}
+#explain{display:flex;flex-direction:column;gap:12px;min-height:0}
+#explain .card{flex:none}
+#exTitle{font-size:22px;font-weight:700}
+#exBody{font-size:16px;line-height:1.5}
+#exBody ul{margin:6px 0 0 20px}#exBody li{margin:4px 0}
+#exBody code{background:#ffffff14;padding:1px 6px;border-radius:5px;font-family:Consolas,monospace;font-size:14px;color:#ffcb6b}
+#exMath{display:flex;justify-content:center;font-size:22px;min-height:30px}
+pre.out{font-family:Consolas,monospace;font-size:13.5px;line-height:1.55;background:#050813;border:1px solid var(--line);border-radius:10px;padding:8px 12px;color:#9be7a6}
+.blocks{display:flex;gap:5px;flex-wrap:wrap}
+.blocks button{background:#ffffff10;border:1px solid var(--line);border-radius:8px;padding:3px 10px;font-size:13px;color:var(--mut)}
+.blocks button.on{border-color:var(--amber);color:var(--amber)}
+
+/* ---------- bode ---------- */
+.bwrap{display:grid;grid-template-columns:800px 1fr;gap:16px}
+.plots{display:flex;flex-direction:column;gap:2px}
+.plots canvas{width:800px;display:block;background:#0b1126;border:1px solid var(--line)}
+#cvMag{height:300px;border-radius:12px 12px 0 0;border-bottom:none!important}#cvPh{height:250px;border-radius:0 0 12px 12px}
+.bpanel{display:flex;flex-direction:column;gap:9px;min-width:0}
+.sl{display:grid;grid-template-columns:28px 1fr 74px;align-items:center;gap:8px;font-size:15px}
+.sl b{font-family:'Cambria Math',serif;font-style:italic;font-size:22px}
+.sl output{font-weight:700;text-align:right;font-size:15px}
+.sl.r b{color:var(--R)}.sl.l b{color:var(--L)}.sl.c b{color:var(--C)}
+.sl.r input{accent-color:var(--R)}
+.pre{display:flex;gap:6px;flex-wrap:wrap}
+.pre button{padding:4px 9px;font-size:12.5px;background:#ffffff10;border:1px solid var(--line);border-radius:8px;color:var(--mut)}
+.pre button:hover{border-color:var(--amber);color:#fff}
+.mx{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.mx .pc{text-align:center;padding:4px 2px}.mx .pc .v{font-size:15px}
+.feat{display:flex;flex-direction:column;gap:6px}
+.ft{display:flex;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 10px;cursor:pointer;
+  transition:border-color .2s,background .2s;text-align:left;width:100%}
+.ft .i{width:22px;height:22px;border-radius:50%;background:#ffffff14;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:none;margin-top:1px}
+.ft .t{font-weight:700;font-size:14px}.ft .d{font-size:12.5px;color:var(--mut);line-height:1.35}
+.ft.on{border-color:var(--amber);background:#fbbf2412}.ft.on .i{background:var(--amber);color:#1a1300}
+.chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mut)}
+.chk input{accent-color:var(--amber)}
+.bnote{font-size:12.5px;color:var(--mut)}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;left:0;right:0;bottom:0;height:44px;background:#05081299;backdrop-filter:blur(8px);border-top:1px solid #1f2a55;
+  display:flex;align-items:center;gap:10px;padding:0 14px;z-index:20;font-size:13px}
+#hud button.ic{width:30px;height:28px;border-radius:8px;background:#ffffff10;border:1px solid #2a3768}
+#hud button.ic:hover{border-color:var(--amber)}
+#segs{flex:1;display:flex;gap:3px;height:20px}
+.seg{position:relative;background:#ffffff10;border-radius:5px;overflow:hidden;border:1px solid transparent;cursor:pointer;
+  font-size:11px;color:#8d9bc8;display:flex;align-items:center;justify-content:center}
+.seg i{position:absolute;left:0;top:0;bottom:0;background:#34d39944;width:0}
+.seg i.over{background:#fbbf2466}
+.seg span{position:relative}
+.seg.cur{border-color:var(--amber);color:#fff}
+.seg.done{background:#34d39922}
+#clock{font-variant-numeric:tabular-nums;font-size:16px;font-weight:700;min-width:116px;text-align:right}
+#clock.late{color:var(--amber)}
+#sname{color:var(--mut);min-width:200px;white-space:nowrap}
+#stephint{position:absolute;right:20px;bottom:10px;font-size:13px;color:var(--mut);z-index:5}
+#notes{position:fixed;left:14px;bottom:56px;width:480px;background:#0a0f20ee;border:1px solid var(--amber);border-radius:12px;
+  padding:12px 16px;font-size:15px;line-height:1.5;z-index:30;display:none}
+#notes.show{display:block}#notes h4{color:var(--amber);font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+/* ajustes por slide */
+#s3 .steps{gap:12px}#s3 .card{padding:12px 24px}#s3 .eq{font-size:32px}#s3 .eq.sm{font-size:27px}#s3 .lbl{font-size:14px}#s3 .note{font-size:17px}#s3 .legend span{font-size:16px}
+
+#s4 .steps{gap:9px}#s4 .card{padding:8px 18px}#s4 .eq.sm{font-size:23px}#s4 .eq{font-size:30px}#s4 .eq.big{font-size:34px}#s4 .maps .card{padding:8px}#s4 .maps .eq{font-size:21px}
+#s8 .steps{gap:22px}#s8 .comp{padding:22px 24px}#s8 .comp .val{font-size:42px}#s8 .comp .sym{font-size:64px}#s8 .eq.sm{font-size:24px}#s8 .eq.xs{font-size:20px}#s8 .col,#s8 .row>.card{min-width:0}#s8 .card{padding:18px 22px}
+#s8 .bd{padding:12px 14px}#s8 .bd .v{font-size:26px}#s8 .note{font-size:16px}
+#s2 .pede li{font-size:19px}
+.legend .tex{border:0!important;padding:0!important;border-radius:0}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- ============ 1. CAPA ============ -->
+<section class="slide" id="s1">
+  <svg id="coverSvg" viewBox="0 0 640 420"><defs><linearGradient id="gr" x1="0" x2="1"><stop offset="0" stop-color="#67e8f9"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs>
+    <g stroke="#26325c" stroke-width="1"><path d="M0 60H640M0 140H640M0 220H640M0 300H640M0 380H640M80 0V420M240 0V420M400 0V420M560 0V420" fill="none"/></g>
+    <path class="c" id="cvc" d=""/><path class="p" id="cvp" d=""/></svg>
+  <div class="kick">Sinais e Sistemas · Exercício 3</div>
+  <div class="big">Circuito RLC<br>Série</div>
+  <div class="sub">Da EDO ao Diagrama de Bode</div>
+  <div class="meta"><b>Grupo:</b> Leonardo Magalhães, Marcos Paulo, Rafael Guerra, Rian Dultra e Vinicius Fernandes<br>
+    <b>Professor:</b> Artur Passos Dias Lima</div>
+  <div class="roadmap">
+    <span class="chip">1 · Enunciado</span><span class="chip">2 · Modelagem (EDO)</span><span class="chip">3 · H(jω)</span>
+    <span class="chip">4 · |H| e ∠H</span><span class="chip">5 · Ressonância</span><span class="chip">6 · Valores comerciais</span>
+    <span class="chip">7 · Código Python</span><span class="chip">8 · Bode interativo</span>
+  </div>
+  <div class="hintkey"><kbd>→</kbd> avançar &nbsp; <kbd>←</kbd> voltar &nbsp; <kbd>N</kbd> roteiro de fala &nbsp; <kbd>F</kbd> tela cheia</div>
+</section>
+
+<!-- ============ 2. ENUNCIADO ============ -->
+<section class="slide" id="s2">
+  <div class="kick">01 · Enunciado do problema</div>
+  <h1>Circuito RLC em série <small>saída = tensão no capacitor</small></h1>
+  <div class="row" style="gap:26px">
+    <div style="width:430px" class="col">
+      <p style="font-size:18px">Em uma malha composta por um resistor <b style="color:var(--R)">R</b>, um indutor <b style="color:#7db1ff">L</b>
+        e um capacitor <b style="color:#4ade80">C</b> em série, aplica-se uma tensão de entrada
+        <span class="tex">v_i(t)</span>. A saída de interesse é a tensão sobre o capacitor:
+        <span class="tex">v_C(t)=y(t)</span>.</p>
+      <div class="card">
+        <div class="lbl">Pede-se</div>
+        <ol class="pede">
+          <li data-s="1">Modelar o circuito com <b>KVL</b> e as relações dos componentes → <b>EDO</b> linear de 2ª ordem.</li>
+          <li data-s="2">Usar o operador harmônico <span class="tex">j\omega</span> para obter <span class="tex">H(j\omega)=\frac{Y(j\omega)}{V_i(j\omega)}</span>.</li>
+          <li data-s="3">Analisar o comportamento em frequência com o <b>diagrama de Bode</b> e o script computacional.</li>
+        </ol>
+      </div>
+    </div>
+    <div style="flex:1" class="col">
+      <div class="card" style="padding:8px 12px 4px">
+        <svg id="circ" viewBox="0 0 780 340">
+          <defs><marker id="ah" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto-start-reverse"><path d="M0 1L10 5L0 9z" fill="#a78bfa"/></marker>
+                <marker id="ah2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse"><path d="M0 1L8 4L0 7z" fill="#cbd5e1"/></marker></defs>
+          <!-- fios -->
+          <path class="w" d="M120 156V90H165M275 90H305M415 90H450M468 90H620V290H120V224"/>
+          <path class="flow" d="M120 156V90H620V290H120V224"/>
+          <!-- fonte -->
+          <g class="comp" data-k="S" style="color:#3b82f6"><circle cx="120" cy="190" r="34" fill="#1e3a8a55" stroke="#60a5fa" stroke-width="4" class="shape"/>
+            <path d="M104 190q8-18 16 0t16 0" stroke="#93c5fd" stroke-width="4" fill="none" class="shape" style="stroke-width:4"/></g>
+          <text x="22" y="198" font-size="26">V<tspan font-size="17" dy="6">i</tspan><tspan dy="-6">(t)</tspan></text>
+          <text x="90" y="138" font-style="normal" font-size="26">+</text><text x="92" y="262" font-style="normal" font-size="26">−</text>
+          <!-- R -->
+          <g class="comp" data-k="R" style="color:#ef4444"><polyline class="shape" stroke="#ef4444" points="165,90 178,90 190,64 205,116 220,64 235,116 250,64 262,90 275,90"/>
+            <rect class="hit" x="160" y="50" width="120" height="100"/></g>
+          <text x="212" y="42" fill="#ef4444" style="fill:#ff7b7b">R</text>
+          <!-- L -->
+          <g class="comp" data-k="L" style="color:#3b82f6"><path class="shape" stroke="#3b82f6" d="M305 90a13.75 17 0 0 1 27.5 0a13.75 17 0 0 1 27.5 0a13.75 17 0 0 1 27.5 0a13.75 17 0 0 1 27.5 0"/>
+            <rect class="hit" x="300" y="50" width="120" height="100"/></g>
+          <text x="352" y="42" style="fill:#7db1ff">L</text>
+          <!-- C -->
+          <g class="comp" data-k="C" style="color:#22c55e"><path class="shape" stroke="#22c55e" d="M450 62V118M468 62V118" style="stroke-width:6"/>
+            <rect class="hit" x="436" y="50" width="46" height="100"/></g>
+          <text x="448" y="42" style="fill:#4ade80">C</text>
+          <!-- tensões nos componentes -->
+          <g stroke="#cbd5e1" stroke-width="2" fill="none"><path d="M168 148H272" marker-start="url(#ah2)" marker-end="url(#ah2)"/><path d="M308 148H412" marker-start="url(#ah2)" marker-end="url(#ah2)"/><path d="M452 148H466" marker-start="url(#ah2)" marker-end="url(#ah2)" opacity="0"/></g>
+          <text class="vlab" x="200" y="178" style="fill:#ff7b7b">V<tspan font-size="14" dy="5">R</tspan></text>
+          <text class="vlab" x="340" y="178" style="fill:#7db1ff">V<tspan font-size="14" dy="5">L</tspan></text>
+          <text class="vlab" x="442" y="178" style="fill:#4ade80">V<tspan font-size="14" dy="5">C</tspan></text>
+          <!-- corrente -->
+          <text x="520" y="76" style="fill:#fbbf24" font-size="22">i(t)</text><path d="M565 71h34" stroke="#fbbf24" stroke-width="3" marker-end="url(#ah2)"/>
+          <!-- saída -->
+          <g class="comp" data-k="Y" style="color:#a78bfa"><path d="M620 90H700M620 290H700" stroke="#a78bfa" stroke-dasharray="5 5" stroke-width="2" fill="none"/>
+            <path class="shape" d="M680 98V282" stroke="#a78bfa" marker-start="url(#ah)" marker-end="url(#ah)" style="stroke-width:4"/>
+            <rect class="hit" x="640" y="90" width="140" height="200"/></g>
+          <text x="696" y="196" style="fill:#c4b5fd" font-size="23">V<tspan font-size="15" dy="5">c</tspan><tspan dy="-5">(t)</tspan></text>
+          <text x="696" y="226" style="fill:#c4b5fd" font-size="23">= Y(t)</text>
+        </svg>
+        <div id="compinfo"><span class="ph">Passe o mouse (ou clique) em <b>R</b>, <b>L</b>, <b>C</b>, na fonte ou na saída</span></div>
+      </div>
+      <div style="text-align:right"><button class="tbtn" id="flowBtn">⏸ pausar corrente</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. MODELAGEM ============ -->
+<section class="slide" id="s3">
+  <div class="kick">02 · Modelagem</div>
+  <h1>Da KVL até a EDO final</h1>
+  <div class="mgrid">
+    <div class="steps">
+      <div class="card" data-s="1"><div class="lbl"><span class="num">1</span>Lei das Tensões de Kirchhoff</div>
+        <div class="eq tex" data-d>V_R(t)+V_L(t)+V_C(t)=V_i(t)</div></div>
+      <div class="card" data-s="2"><div class="lbl"><span class="num">2</span>Relações dos componentes <span class="mut" style="text-transform:none;letter-spacing:0">(mesma corrente <span class="tex">i(t)</span>)</span></div>
+        <div class="eq sm tex" data-d>V_R=R\,i(t)\qquad V_L=L\frac{\d i(t)}{\d t}\qquad i(t)=C\frac{\d V_C(t)}{\d t}</div></div>
+      <div class="card" data-s="3"><div class="lbl"><span class="num">3</span>Substituir <span class="tex" style="text-transform:none">i(t)</span> e derivar</div>
+        <div class="eq sm tex" data-d>V_R=RC\frac{\d V_C}{\d t}\qquad\qquad V_L=L\frac{\d}{\d t}\left(C\frac{\d V_C}{\d t}\right)=LC\frac{\d^2V_C}{\d t^2}</div></div>
+    </div>
+    <div class="card glow" data-s="4">
+      <div class="lbl"><span class="num">4</span>EDO final &nbsp; <span class="mut" style="text-transform:none;letter-spacing:0">com <span class="tex">Y(t)=V_C(t)</span></span></div>
+      <div class="eq tex" data-d style="font-size:36px;margin:4px 0 8px">\hl{hL}{LC\frac{\d^2Y(t)}{\d t^2}}+\hl{hR}{RC\frac{\d Y(t)}{\d t}}+\hl{hC}{Y(t)}=V_i(t)</div>
+      <div class="legend" style="margin-top:0;align-items:center;justify-content:space-between"><span class="a">indutor (<i>V<sub>L</sub></i>)</span><span class="b">resistor (<i>V<sub>R</sub></i>)</span><span class="c">capacitor (<i>V<sub>C</sub></i>)</span><span style="border:none;padding:0;font-size:16px;color:var(--mut);flex:1;text-align:right">EDO linear de <b>2ª ordem</b>, coeficientes constantes: a entrada <span class="tex">V_i</span> "comanda" a saída <span class="tex">Y</span>.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. FUNÇÃO DE TRANSFERÊNCIA ============ -->
+<section class="slide" id="s4">
+  <div class="kick">03 · Função de transferência</div>
+  <h1>Operador harmônico <span class="tex" style="font-size:30px">j\omega</span> <small>condições iniciais nulas</small></h1>
+  <div class="steps">
+    <div class="maps" data-s="1">
+      <div class="card"><div class="eq sm tex">Y(t)\;\rightarrow\;Y(j\omega)</div></div>
+      <div class="card"><div class="eq sm tex">\frac{\d Y}{\d t}\;\rightarrow\;j\omega\,Y(j\omega)</div></div>
+      <div class="card"><div class="eq sm tex">\frac{\d^2 Y}{\d t^2}\;\rightarrow\;(j\omega)^2\,Y(j\omega)</div></div>
+    </div>
+    <div class="card" data-s="2"><div class="lbl"><span class="num">1</span>Aplicar na EDO</div>
+      <div class="eq sm tex" data-d>LC(j\omega)^2\,Y(j\omega)+RC(j\omega)\,Y(j\omega)+Y(j\omega)=V_i(j\omega)</div></div>
+    <div class="card" data-s="3"><div class="lbl"><span class="num">2</span>Colocar <span class="tex">Y(j\omega)</span> em evidência</div>
+      <div class="eq sm tex" data-d>Y(j\omega)\left[LC(j\omega)^2+RC(j\omega)+1\right]=V_i(j\omega)</div></div>
+    <div class="card" data-s="4"><div class="lbl"><span class="num">3</span>Razão saída / entrada</div>
+      <div class="eq tex" data-d>H(j\omega)=\frac{Y(j\omega)}{V_i(j\omega)}=\frac{1}{LC(j\omega)^2+RC(j\omega)+1}</div></div>
+    <div class="card glow" data-s="5"><div class="lbl"><span class="num">4</span>Com <span class="tex">j^2=-1</span> ⇒ forma algébrica <span class="tex">a+jb</span></div>
+      <div class="eq big tex" data-d>H(j\omega)=\frac{1}{\hl{hRe}{(1-LC\omega^2)}+j\,\hl{hIm}{\omega RC}}</div>
+      <div class="legend" style="justify-content:center;margin-top:2px"><span style="color:var(--cyan);border-color:#22d3ee77">parte real  a = 1 − LCω²</span><span style="color:var(--pink);border-color:#f472b677">parte imaginária  b = ωRC</span></div></div>
+  </div>
+</section>
+
+<!-- ============ 5. MAGNITUDE ============ -->
+<section class="slide" id="s5">
+  <div class="kick">04 · Magnitude total</div>
+  <h1>Módulo de <span class="tex" style="font-size:30px">H(j\omega)</span> e ganho em dB</h1>
+  <div class="row" style="gap:22px">
+    <div class="steps" style="flex:1">
+      <div class="card" data-s="1"><div class="lbl"><span class="num">1</span>Separar numerador e denominador</div>
+        <div class="eq sm tex" data-d>N=1\qquad D=\hl{hRe}{a}+j\,\hl{hIm}{b}\;,\quad a=1-LC\omega^2\;,\; b=\omega RC</div></div>
+      <div class="card" data-s="2"><div class="lbl"><span class="num">2</span>Módulo da divisão = divisão dos módulos</div>
+        <div class="eq sm tex" data-d>\vert H\vert=\frac{\vert N\vert}{\vert D\vert}=\frac{1}{\sqrt{a^2+b^2}}=\frac{1}{\sqrt{(1-LC\omega^2)^2+(\omega RC)^2}}</div></div>
+      <div class="card glow" data-s="3"><div class="lbl"><span class="num">3</span>Em decibéis: <span class="tex">20\log_{10}\vert H\vert</span></div>
+        <div class="eq sm tex" data-d>\vert H\vert_{dB}=20\log_{10}1-20\log_{10}\sqrt{(1-LC\omega^2)^2+(\omega RC)^2}</div>
+        <div class="eq tex" data-d style="font-size:25px">\vert H\vert_{dB}=-10\log_{10}\left[(1-LC\omega^2)^2+(\omega RC)^2\right]</div>
+        <div class="note">Como <span class="tex">\log_{10}1=0</span> e <span class="tex">\sqrt{x}=x^{1/2}</span>, o expoente ½ desce multiplicando: <b>20 · ½ = 10</b>.</div></div>
+    </div>
+    <div class="phasor" data-mode="mag" data-s="1"></div>
+  </div>
+</section>
+
+<!-- ============ 6. FASE ============ -->
+<section class="slide" id="s6">
+  <div class="kick">05 · Fase total</div>
+  <h1>Fase de <span class="tex" style="font-size:30px">H(j\omega)</span> <small>fase do numerador − fase do denominador</small></h1>
+  <div class="row" style="gap:22px">
+    <div class="steps" style="flex:1">
+      <div class="card" data-s="1"><div class="lbl"><span class="num">1</span>Fase de cada parte <span class="tex" style="text-transform:none">\theta=\arctan(b/a)</span></div>
+        <div class="eq sm tex" data-d>\theta_N=\arctan\frac{0}{1}=0^\circ\qquad\qquad\theta_D=\arctan\frac{\omega RC}{1-LC\omega^2}</div></div>
+      <div class="card glow" data-s="2"><div class="lbl"><span class="num">2</span>Fase total</div>
+        <div class="eq tex" data-d>\angle H(j\omega)=\theta_N-\theta_D=-\arctan\left(\frac{\omega RC}{1-LC\omega^2}\right)</div></div>
+      <div class="lim" data-s="3">
+        <div class="card"><div class="mut" style="font-size:13px">ω → 0</div><div class="big">0°</div><div class="note">saída acompanha a entrada</div></div>
+        <div class="card"><div class="mut" style="font-size:13px">ω = ω₀</div><div class="big">−90°</div><div class="note"><span class="tex">a=0</span>: só parte imaginária</div></div>
+        <div class="card"><div class="mut" style="font-size:13px">ω → ∞</div><div class="big">−180°</div><div class="note">saída invertida</div></div>
+      </div>
+      <div class="warn" data-s="3"><b>Atenção ao quadrante:</b> para ω &gt; ω₀ temos a &lt; 0. O <code>arctan</code> sozinho erraria; por isso o Python usa <code>np.angle</code> (equivale a <i>atan2</i>).</div>
+    </div>
+    <div class="phasor" data-mode="phase" data-s="1"></div>
+  </div>
+</section>
+
+<!-- ============ 7. RESSONÂNCIA ============ -->
+<section class="slide" id="s7">
+  <div class="kick">06 · Frequência de ressonância</div>
+  <h1>Onde a parte real do denominador se anula</h1>
+  <div class="row" style="gap:22px">
+    <div class="steps" style="flex:1">
+      <div class="card" data-s="1"><div class="lbl"><span class="num">1</span>Condição</div>
+        <div class="eq sm tex" data-d>a=0\;\Longrightarrow\;1-LC\omega^2=0\;\Longrightarrow\;LC\omega^2=1</div></div>
+      <div class="card glow" data-s="2"><div class="lbl"><span class="num">2</span>Frequência natural</div>
+        <div class="eq big tex" data-d>\omega_0=\frac{1}{\sqrt{LC}}</div></div>
+      <div class="card" data-s="3"><div class="lbl"><span class="num">3</span>O que acontece em <span class="tex">\omega_0</span></div>
+        <div class="eq sm tex" data-d>D(j\omega_0)=j\,\omega_0RC\;\;\Rightarrow\;\;\angle H=-90^\circ</div>
+        <div class="eq sm tex" data-d>\vert H(j\omega_0)\vert=\frac{1}{\omega_0RC}=\frac{1}{R}\sqrt{\frac{L}{C}}=Q</div></div>
+      <div class="warn" data-s="4">L e C "cancelam" suas reatâncias: circuito <b>puramente resistivo</b> para a fonte. Com amortecimento baixo, o pico de ganho aparece <b>um pouco antes</b> de ω₀.</div>
+    </div>
+    <div class="phasor" data-mode="res" data-s="1"></div>
+  </div>
+</section>
+
+<!-- ============ 8. VALORES COMERCIAIS ============ -->
+<section class="slide" id="s8">
+  <div class="kick">07 · Valores comerciais</div>
+  <h1>Componentes reais, sistema <b style="color:var(--amber)">subamortecido</b></h1>
+  <div class="steps">
+    <div class="cards3" data-s="1">
+      <div class="comp cR"><div class="sym">R</div><div><div class="val">100 Ω</div><div class="sub">Resistor · séries E12/E24</div></div></div>
+      <div class="comp cL"><div class="sym">L</div><div><div class="val">10 mH</div><div class="sub">Indutor · 10×10⁻³ H</div></div></div>
+      <div class="comp cC"><div class="sym">C</div><div><div class="val">1 µF</div><div class="sub">Capacitor · 1×10⁻⁶ F</div></div></div>
+    </div>
+    <div class="card" data-s="2" style="padding:12px 22px"><div class="lbl">Constantes do sistema</div>
+      <div class="eq sm tex" data-d>LC=10\times10^{-3}\cdot1\times10^{-6}=10^{-8}\,\text{s}^2\qquad\qquad RC=100\cdot10^{-6}=10^{-4}\,\text{s}</div></div>
+    <div class="row" style="gap:16px">
+      <div class="col" style="flex:1.15">
+        <div class="card" data-s="3"><div class="lbl">Resultado numérico</div>
+          <div class="eq sm tex" data-d>H(j\omega)=\frac{1}{(1-10^{-8}\omega^2)+j\,(10^{-4}\omega)}</div>
+          <div class="eq xs tex" data-d>\vert H\vert_{dB}=-10\log_{10}\left[(1-10^{-8}\omega^2)^2+10^{-8}\omega^2\right]</div>
+          <div class="eq xs tex" data-d>\angle H=-\arctan\left(\frac{10^{-4}\omega}{1-10^{-8}\omega^2}\right)</div></div>
+      </div>
+      <div class="card glow" data-s="4" style="flex:.85">
+        <div class="lbl">Frequência de ressonância</div>
+        <div class="eq sm tex" data-d>\omega_0=\frac{1}{\sqrt{10^{-8}}}=\frac{1}{10^{-4}}=10^4\,\text{rad/s}</div>
+        <div class="badges">
+          <div class="bd"><div class="k">ω₀</div><div class="v">10⁴ rad/s</div></div>
+          <div class="bd"><div class="k">f₀ = ω₀/2π</div><div class="v">≈ 1,59 kHz</div></div>
+          <div class="bd"><div class="k">ζ = (R/2)√(C/L)</div><div class="v">0,5</div></div>
+          <div class="bd"><div class="k">Q = 1/(2ζ)</div><div class="v">1</div></div>
+        </div>
+        <div class="note">ζ &lt; 1 ⇒ <b>subamortecido</b>: há pico de ressonância visível.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 9. CÓDIGO ============ -->
+<section class="slide" id="s9" data-steps="6">
+  <div class="kick">08 · Código Python <span class="mut" style="text-transform:none;letter-spacing:0;font-weight:500">— modelagem.py</span></div>
+  <h1 style="margin-bottom:10px">A teoria virou 58 linhas de código</h1>
+  <div class="codewrap">
+    <div id="code"></div>
+    <div id="explain">
+      <div class="blocks" id="blocks"></div>
+      <div class="card"><div id="exTitle"></div><div id="exBody"></div></div>
+      <div class="card" id="exMathCard" style="display:none"><div id="exMath"></div></div>
+      <pre class="out" id="exOut" style="display:none"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10. BODE ============ -->
+<section class="slide" id="s10" data-steps="4">
+  <div class="kick">09 · Diagrama de Bode interativo</div>
+  <h1 style="margin-bottom:8px">Magnitude e fase <small>filtro passa-baixa de 2ª ordem — passe o mouse nos gráficos</small></h1>
+  <div class="bwrap">
+    <div class="plots">
+      <canvas id="cvMag" width="1600" height="600"></canvas>
+      <canvas id="cvPh" width="1600" height="500"></canvas>
+    </div>
+    <div class="bpanel">
+      <div class="sl r"><b>R</b><input type="range" id="rR" min="0" max="36"><output id="oR"></output></div>
+      <div class="sl l"><b>L</b><input type="range" id="rL" min="0" max="24"><output id="oL"></output></div>
+      <div class="sl c"><b>C</b><input type="range" id="rC" min="0" max="24"><output id="oC"></output></div>
+      <div class="pre"><button data-p="ex">▶ Valores do exercício</button><button data-p="low">R = 10 Ω</button><button data-p="nopk">R = 220 Ω</button></div>
+      <div class="mx">
+        <div class="pc"><span class="k">ω₀ (rad/s)</span><span class="v" id="mW0"></span></div>
+        <div class="pc"><span class="k">f₀ (Hz)</span><span class="v" id="mF0"></span></div>
+        <div class="pc"><span class="k">ζ</span><span class="v" id="mZ"></span></div>
+        <div class="pc"><span class="k">Q</span><span class="v" id="mQ"></span></div>
+      </div>
+      <div class="feat" id="feat">
+        <button class="ft" data-f="pass"><span class="i">1</span><span><span class="t">Banda de passagem</span><br><span class="d" id="dPass"></span></span></button>
+        <button class="ft" data-f="peak"><span class="i">2</span><span><span class="t">Pico de ressonância</span><br><span class="d" id="dPeak"></span></span></button>
+        <button class="ft" data-f="res"><span class="i">3</span><span><span class="t">Frequência ω₀</span><br><span class="d" id="dRes"></span></span></button>
+        <button class="ft" data-f="stop"><span class="i">4</span><span><span class="t">Banda de rejeição</span><br><span class="d" id="dStop"></span></span></button>
+      </div>
+      <label class="chk"><input type="checkbox" id="chAsym" checked> mostrar assíntotas (0 dB e −40 dB/déc)</label>
+      <div class="bnote">Sliders percorrem a série comercial E12. Linha tracejada cinza = curva do exercício.</div>
+    </div>
+  </div>
+</section>
+
+<div id="stephint"></div>
+</div>
+
+<div id="notes"><h4>Roteiro de fala</h4><div id="notesTxt"></div></div>
+<div id="hud">
+  <button class="ic" id="bPrev" title="Anterior (←)">◀</button>
+  <button class="ic" id="bNext" title="Próximo (→)">▶</button>
+  <div id="segs"></div>
+  <div id="sname"></div>
+  <div id="clock">0:00 / 10:00</div>
+  <button class="ic" id="bPlay" title="Iniciar/pausar cronômetro (T)">⏱</button>
+  <button class="ic" id="bReset" title="Zerar cronômetro">↺</button>
+  <button class="ic" id="bNotes" title="Roteiro de fala (N)">🗒</button>
+  <button class="ic" id="bFull" title="Tela cheia (F)">⛶</button>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+
+/* =====================================================================
+   1) Mini conversor TeX -> MathML (renderização offline, sem bibliotecas)
+   ===================================================================== */
+const GREEK={alpha:'α',beta:'β',gamma:'γ',delta:'δ',zeta:'ζ',theta:'θ',omega:'ω',Omega:'Ω',mu:'μ',pi:'π',tau:'τ',phi:'φ',sigma:'σ'};
+const OPS={cdot:'·',times:'×',implies:'⟹',Longrightarrow:'⟹',Rightarrow:'⇒',rightarrow:'→',to:'→',angle:'∠',circ:'°',infty:'∞',pm:'±',approx:'≈',ll:'≪',gg:'≫',vert:'|',lvert:'|',rvert:'|',leq:'≤',geq:'≥',neq:'≠'};
+const FUNCS=['log','arctan','sin','cos','tan'];
+function texToMathML(src){
+  let i=0;const n=src.length;
+  const ws=()=>{while(i<n&&/\s/.test(src[i]))i++;};
+  function raw(){ws();if(src[i]!=='{')return '';let d=0,s=i+1;do{if(src[i]==='{')d++;else if(src[i]==='}')d--;i++;}while(d>0&&i<n);return src.slice(s,i-1);}
+  function group(){ws();if(src[i]==='{'){i++;const x=seq('}');i++;return '<mrow>'+x+'</mrow>';}return atom();}
+  function seq(end){let o='';for(;;){ws();if(i>=n||src[i]===end||/^\\right(?![A-Za-z])/.test(src.slice(i,i+7)))break;o+=term();}return o;}
+  function term(){
+    const b=atom();let sub='',sup='';
+    for(;;){ws();const c=src[i];if(c==='^'){i++;sup=group();}else if(c==='_'){i++;sub=group();}else break;}
+    if(sub&&sup)return '<msubsup>'+b+sub+sup+'</msubsup>';
+    if(sup)return '<msup>'+b+sup+'</msup>';
+    if(sub)return '<msub>'+b+sub+'</msub>';
+    return b;
+  }
+  function delim(){ws();if(src[i]==='.'){i++;return '';}return atom().replace(' stretchy="false"','');}
+  function atom(){
+    ws();const c=src[i];
+    if(c==='{')return group();
+    if(c==='\\'){i++;let nm='';if(/[A-Za-z]/.test(src[i])){while(i<n&&/[A-Za-z]/.test(src[i]))nm+=src[i++];}else nm=src[i++];return cmd(nm);}
+    if(/\d/.test(c)){const m=/^\d+(?:[.,]\d+)?/.exec(src.slice(i));i+=m[0].length;return '<mn>'+m[0]+'</mn>';}
+    i++;
+    if(/[A-Za-z]/.test(c))return '<mi>'+c+'</mi>';
+    return '<mo stretchy="false">'+(c==='-'?'−':c)+'</mo>';
+  }
+  function cmd(nm){
+    switch(nm){
+      case 'frac':case 'dfrac':{const a=group(),b=group();return '<mfrac>'+a+b+'</mfrac>';}
+      case 'sqrt':return '<msqrt>'+group()+'</msqrt>';
+      case 'underbrace':{const a=group();ws();let lab='';if(src[i]==='_'){i++;lab=group();}return '<munder><munder>'+a+'<mo>⏟</mo></munder>'+lab+'</munder>';}
+      case 'text':return '<mtext>'+raw().replace(/ /g,'\u00A0')+'</mtext>';
+      case 'mathrm':return '<mi mathvariant="normal">'+raw()+'</mi>';
+      case 'hl':{const c=raw();const g=group();return '<mrow class="hl '+c+'">'+g+'</mrow>';}
+      case 'd':return '<mi mathvariant="normal">d</mi>';
+      case 'cdots':return '<mo>⋯</mo>';
+      case 'left':{const o=delim();const c=seq('\u0000');if(/^\\right(?![A-Za-z])/.test(src.slice(i,i+7)))i+=6;const cl=delim();return '<mrow>'+(o?o:'')+c+(cl?cl:'')+'</mrow>';}
+      case 'right':return '';
+      case ',':return '<mspace width="0.17em"/>';
+      case ';':return '<mspace width="0.28em"/>';
+      case ' ':return '<mspace width="0.3em"/>';
+      case 'quad':return '<mspace width="1em"/>';
+      case 'qquad':return '<mspace width="2em"/>';
+      case '!':return '<mspace width="0em"/>';
+    }
+    if(GREEK[nm])return '<mi>'+GREEK[nm]+'</mi>';
+    if(OPS[nm])return '<mo stretchy="false">'+OPS[nm]+'</mo>';
+    if(FUNCS.includes(nm))return '<mrow><mi>'+nm+'</mi><mspace width="0.12em"/></mrow>';
+    return '<mi>'+nm+'</mi>';
+  }
+  return seq('\u0000');
+}
+function tex(s,display){return '<math'+(display?' display="block"':'')+'>'+texToMathML(s)+'</math>';}
+$$('.tex').forEach(el=>{el.innerHTML=tex(el.textContent.trim(),el.hasAttribute('data-d'));});
+
+/* =====================================================================
+   2) Utilidades numéricas
+   ===================================================================== */
+const P={R:100,L:10e-3,C:1e-6};
+const rad2deg=180/Math.PI;
+const minus=s=>s.replace(/-/g,'−');
+function nf(x,d=3){
+  if(x===0)return '0';const ax=Math.abs(x);
+  if(ax>=1e5||ax<1e-3){const e=Math.floor(Math.log10(ax));const m=x/Math.pow(10,e);return minus(m.toFixed(2).replace('.',','))+'×10<sup>'+e+'</sup>';}
+  return minus(Number(x.toPrecision(d)).toLocaleString('pt-BR',{maximumFractionDigits:6}));
+}
+function nfp(x,d=3){return nf(x,d).replace(/<sup>(.*?)<\/sup>/g,'^$1');}
+const fmtW=w=>Math.round(w).toLocaleString('pt-BR');
+function resp(w,R,L,C){const a=1-L*C*w*w,b=w*R*C;return {a,b,mag:-10*Math.log10(a*a+b*b),ph:-Math.atan2(b,a)*rad2deg};}
+
+/* =====================================================================
+   3) Capa: curva de Bode decorativa
+   ===================================================================== */
+(function(){
+  let dm='',dp='';
+  for(let k=0;k<=240;k++){const lw=2+4*k/240,w=Math.pow(10,lw);const r=resp(w,P.R,P.L,P.C);
+    const x=(k/240)*640, ym=60+(20-r.mag)/120*320, yp=60+(-r.ph/180)*320*0.9;
+    dm+=(k?'L':'M')+x.toFixed(1)+' '+Math.min(410,Math.max(10,ym)).toFixed(1);
+    dp+=(k?'L':'M')+x.toFixed(1)+' '+(yp+10).toFixed(1);}
+  $('#cvc').setAttribute('d',dm);$('#cvp').setAttribute('d',dp);
+})();
+
+/* =====================================================================
+   4) Circuito interativo
+   ===================================================================== */
+(function(){
+  const info={
+    R:['<span style="color:#ff7b7b">Resistor</span>',String.raw`V_R(t)=R\cdot i(t)`],
+    L:['<span style="color:#7db1ff">Indutor</span>',String.raw`V_L(t)=L\,\frac{\d i(t)}{\d t}`],
+    C:['<span style="color:#4ade80">Capacitor</span>',String.raw`i(t)=C\,\frac{\d V_C(t)}{\d t}`],
+    S:['<span style="color:#93c5fd">Fonte (entrada)</span>',String.raw`V_i(t)`],
+    Y:['<span style="color:#c4b5fd">Saída</span>',String.raw`Y(t)=V_C(t)`]};
+  const box=$('#compinfo');
+  function sel(k){$$('#circ .comp').forEach(g=>g.classList.toggle('sel',g.dataset.k===k));
+    box.innerHTML=info[k][0]+' &nbsp;→&nbsp; '+tex(info[k][1]);}
+  $$('#circ .comp').forEach(g=>{g.addEventListener('mouseenter',()=>sel(g.dataset.k));g.addEventListener('click',()=>sel(g.dataset.k));});
+  $('#flowBtn').addEventListener('click',e=>{const c=$('#circ');c.classList.toggle('paused');e.target.textContent=c.classList.contains('paused')?'▶ animar corrente':'⏸ pausar corrente';});
+})();
+
+/* =====================================================================
+   5) Fasor interativo (slides 5, 6 e 7)
+   ===================================================================== */
+function niceCeil(x){const p=Math.pow(10,Math.floor(Math.log10(x)));const m=x/p;return (m<=1?1:m<=2?2:m<=5?5:10)*p;}
+function buildPhasor(host){
+  const mode=host.dataset.mode;
+  host.innerHTML='<canvas width="912" height="624"></canvas>'+
+    '<div class="pctl"><label>ω = <b class="wv"></b> rad/s</label><input type="range" min="2" max="6" step="0.005" value="3"></div>'+
+    (mode==='res'?'<div class="snaps"><button data-v="3">ω ≪ ω₀</button><button data-v="4">ω = ω₀</button><button data-v="5">ω ≫ ω₀</button></div>':'')+
+    '<div class="pread"></div>';
+  const cv=$('canvas',host),ctx=cv.getContext('2d'),sl=$('input',host),wv=$('.wv',host),rd=$('.pread',host);
+  const CW=456,CH=312,cx=CW/2,cy=CH/2+4,RAD=128;
+  function arrow(x0,y0,x1,y1,col,w){const a=Math.atan2(y1-y0,x1-x0);ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w;
+    ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1-8*Math.cos(a),y1-8*Math.sin(a));ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1-12*Math.cos(a-.4),y1-12*Math.sin(a-.4));ctx.lineTo(x1-12*Math.cos(a+.4),y1-12*Math.sin(a+.4));ctx.closePath();ctx.fill();}
+  function draw(){
+    const v=+sl.value,w=Math.pow(10,v);
+    const {a,b,mag,ph}=resp(w,P.R,P.L,P.C),D=Math.hypot(a,b),th=Math.atan2(b,a);
+    const E=niceCeil(Math.max(1.2,D*1.15)),k=RAD/E;
+    ctx.setTransform(2,0,0,2,0,0);ctx.clearRect(0,0,CW,CH);
+    // grade
+    ctx.strokeStyle='#26325c';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+    [E/2,E].forEach(r=>{ctx.beginPath();ctx.arc(cx,cy,r*k,0,7);ctx.stroke();});ctx.setLineDash([]);
+    const resHit=mode==='res'&&Math.abs(a)<0.06;
+    ctx.strokeStyle='#44558f';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(cx-RAD-14,cy);ctx.lineTo(cx+RAD+14,cy);ctx.stroke();
+    if(resHit){ctx.strokeStyle=ctx.fillStyle='#f472b6';ctx.shadowColor='#f472b6';ctx.shadowBlur=14;ctx.lineWidth=3;}
+    ctx.beginPath();ctx.moveTo(cx,cy+RAD+14);ctx.lineTo(cx,cy-RAD-14);ctx.stroke();ctx.shadowBlur=0;
+    ctx.fillStyle='#9aa7d4';ctx.font='12px Segoe UI';ctx.textAlign='center';
+    ctx.fillText('Re',cx+RAD+6,cy-8);ctx.fillText('Im',cx+14,cy-RAD-6);
+    ctx.fillText(nfp(E),cx+RAD,cy+16);ctx.fillText(nfp(-E),cx-RAD,cy+16);ctx.textAlign='left';ctx.fillText(nfp(E),cx+6,cy-RAD+4);
+    const px=cx+a*k,py=cy-b*k;
+    // projeções
+    ctx.lineWidth=4;ctx.strokeStyle='#22d3ee';ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,cy);ctx.stroke();
+    ctx.strokeStyle='#f472b6';ctx.beginPath();ctx.moveTo(px,cy);ctx.lineTo(px,py);ctx.stroke();
+    // arco de ângulo
+    if(mode!=='mag'){ctx.strokeStyle='#fbbf24';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(cx,cy,34,0,-th,true);ctx.stroke();
+      ctx.fillStyle='#fbbf24';ctx.font='bold 14px Segoe UI';
+      const ma=-th/2;ctx.textAlign='center';ctx.fillText('θ',cx+52*Math.cos(ma),cy+52*Math.sin(ma)+5);}
+    arrow(cx,cy,px,py,'#fbbf24',3.5);
+    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(px,py,4,0,7);ctx.fill();
+    ctx.font='bold 14px Segoe UI';ctx.textAlign=a>=0?'left':'right';
+    ctx.fillText('D(jω)',px+(a>=0?10:-10),py-8);
+    ctx.font='12px Segoe UI';ctx.fillStyle='#22d3ee';ctx.textAlign='center';ctx.fillText('a',(cx+px)/2,cy+(b>=0?15:-8));
+    ctx.fillStyle='#f472b6';ctx.textAlign=a>=0?'left':'right';ctx.fillText('b',px+(a>=0?6:-6),(cy+py)/2);
+    if(resHit){ctx.fillStyle='#f472b6';ctx.font='bold 13px Segoe UI';ctx.textAlign='left';ctx.fillText('a = 0 ⇒ D puramente imaginário',12,22);}
+    // leituras
+    wv.textContent=fmtW(w);
+    const cell=(k_,v_)=>'<div class="pc"><span class="k">'+k_+'</span><span class="v">'+v_+'</span></div>';
+    let h=cell('a = 1 − LCω²',nf(a))+cell('b = ωRC',nf(b));
+    if(mode==='mag')h+=cell('|D| = √(a²+b²)',nf(D))+cell('|H| = 1/|D|',nf(1/D))+cell('|H| em dB',nf(mag)+' dB');
+    else if(mode==='phase')h+=cell('θ<sub>D</sub> = arctg(b/a)',nf(th*rad2deg)+'°')+cell('∠H = −θ<sub>D</sub>',nf(ph)+'°');
+    else h+=cell('∠H',nf(ph)+'°')+cell('|H| em dB',nf(mag)+' dB');
+    rd.innerHTML=h;
+    $$('.snaps button',host).forEach(bt=>bt.classList.toggle('on',Math.abs(+bt.dataset.v-v)<0.011));
+  }
+  sl.addEventListener('input',draw);sl.addEventListener('change',()=>sl.blur());
+  $$('.snaps button',host).forEach(bt=>bt.addEventListener('click',()=>{sl.value=bt.dataset.v;draw();}));
+  if(mode==='phase')sl.value=3.9;
+  draw();
+}
+$$('.phasor').forEach(buildPhasor);
+
+/* =====================================================================
+   6) Código Python: walkthrough
+   ===================================================================== */
+const CODE=String.raw`import numpy as np
+import matplotlib.pyplot as plt
+
+# 1. Definição dos valores físicos dos componentes
+R = 100.0      # Resistência: 100 Ohms
+L = 10e-3      # Indutância: 10 mH (10 * 10^-3 H)
+C = 1e-6       # Capacitância: 1 uF (1 * 10^-6 F)
+
+# Constantes auxiliares calculadas a partir das equações
+LC = L * C     # Resultará em 10^-8
+RC = R * C     # Resultará em 10^-4
+
+# 2. Definição do vetor de frequência w (rad/s) em escala logarítmica
+# A ressonância esperada é em 10^4 rad/s. 
+# Varremos de 10^2 (100) até 10^6 (1.000.000) com 1000 pontos.
+w = np.logspace(2, 6, 1000)
+
+# 3. Modelagem explícita da Função de Transferência H(jw)
+# Numerador = 1
+# Denominador = (1 - LC*w^2) + j(w*RC)
+H = 1 / ((1 - LC * w**2) + 1j * (w * RC))
+    
+# 4. Cálculo da Magnitude e Fase
+# Magnitude em decibéis: 20 * log10(|H|)
+mag_dB = 20 * np.log10(np.abs(H))
+
+# Fase em graus: arctg(Parte Imaginária / Parte Real)
+# np.unwrap mantém a continuidade da curva sem saltos matemáticos
+phase_deg = np.rad2deg(np.unwrap(np.angle(H)))
+
+# 5. Configuração da Plotagem (Diagrama de Bode)
+fig, (ax_mag, ax_phase) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+
+# Plotagem da Magnitude
+ax_mag.semilogx(w, mag_dB, color='blue', linewidth=2)
+ax_mag.set_title('Diagrama de Bode - Filtro RLC Série ($R=100\Omega, L=10mH, C=1\mu F$)', fontsize=14)
+ax_mag.set_ylabel('Magnitude (dB)', fontsize=12)
+ax_mag.grid(True, which="both", ls="--", alpha=0.6)
+
+# Marcação do ponto de ressonância (w = 10^4)
+ax_mag.axvline(x=10000, color='red', linestyle=':', label='Ressonância ($\omega = 10^4$ rad/s)')
+ax_mag.legend(loc='lower left')
+
+# Plotagem da Fase
+ax_phase.semilogx(w, phase_deg, color='green', linewidth=2)
+ax_phase.set_ylabel('Fase (graus)', fontsize=12)
+ax_phase.set_xlabel('Frequência $\omega$ (rad/s)', fontsize=12)
+
+# Eixo Y travado nos ângulos notáveis
+ax_phase.set_yticks([0, -45, -90, -135, -180])
+ax_phase.grid(True, which="both", ls="--", alpha=0.6)
+
+# Marcação do ponto de ressonância na fase
+ax_phase.axvline(x=10000, color='red', linestyle=':')
+
+# Ajuste e exibição
+plt.tight_layout()
+plt.show()`;
+(function(){
+  const lines=CODE.split('\n');
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const re=/('[^']*')|(\b(?:import|as)\b)|(\b\d+\.?\d*(?:e-?\d+)?j?\b)|(\b[A-Za-z_][\w.]*(?=\())|(\b(?:np|plt)\b)/g;
+  function hi(l){
+    const ci=l.indexOf('#');let code=ci>=0?l.slice(0,ci):l,cm=ci>=0?l.slice(ci):'';
+    code=esc(code).replace(re,(m,s,k,nn,f,mod)=>s?'<span class="tk-s">'+s+'</span>':k?'<span class="tk-k">'+k+'</span>':nn?'<span class="tk-n">'+nn+'</span>':f?'<span class="tk-f">'+f+'</span>':'<span class="tk-m">'+mod+'</span>');
+    return code+(cm?'<span class="tk-c">'+esc(cm)+'</span>':'');
+  }
+  const box=$('#code');
+  box.innerHTML=lines.map((l,i)=>'<div class="ln" data-n="'+(i+1)+'"><span class="no">'+(i+1)+'</span><span>'+hi(l)+'</span></div>').join('');
+  const blocks=[
+    null,
+    {n:'Imports',r:[1,2],t:'Bibliotecas',h:'<ul><li><code>numpy</code> → vetores e <b>números complexos</b> (o <code>1j</code> é o “j” da teoria).</li><li><code>matplotlib.pyplot</code> → desenha o diagrama.</li></ul>'},
+    {n:'Componentes',r:[4,11],t:'Valores físicos (SI)',h:'<ul><li><code>R=100 Ω</code>, <code>L=10e-3 H</code>, <code>C=1e-6 F</code> — os valores comerciais.</li><li>Já calcula os produtos que aparecem na fórmula: <code>LC=10⁻⁸</code> e <code>RC=10⁻⁴</code>.</li></ul>'},
+    {n:'Frequências',r:[13,16],t:'Eixo ω em escala log',h:'<ul><li><code>np.logspace(2, 6, 1000)</code> gera <b>1000 frequências</b> de 10² a 10⁶ rad/s, igualmente espaçadas em log.</li><li>Cobre ω₀ = 10⁴ com folga de duas décadas para cada lado.</li></ul>'},
+    {n:'H(jω)',r:[18,21],t:'A função de transferência',h:'<ul><li>Transcrição literal da fórmula final.</li><li>Como <code>w</code> é um vetor, uma única linha calcula <b>H nas 1000 frequências</b> (vetorização).</li></ul>',m:String.raw`H(j\omega)=\frac{1}{(1-LC\omega^2)+j\,\omega RC}`},
+    {n:'Mag. e fase',r:[23,29],t:'Magnitude (dB) e fase (graus)',h:'<ul><li><code>np.abs(H)</code> → módulo <code>√(a²+b²)</code>; depois <code>20·log10</code>.</li><li><code>np.angle(H)</code> → fase com <b>quadrante correto</b> (atan2).</li><li><code>np.unwrap</code> evita saltos de 360°; <code>rad2deg</code> converte.</li></ul>',m:String.raw`20\log_{10}\vert H\vert\qquad\angle H`,out:true},
+    {n:'Gráfico',r:[31,58],t:'Diagrama de Bode (2 painéis)',h:'<ul><li><code>subplots(2,1, sharex=True)</code>: magnitude em cima, fase embaixo, mesmo eixo ω.</li><li><code>semilogx</code> → eixo x logarítmico.</li><li><code>axvline(10000)</code> marca a ressonância nos dois gráficos.</li><li><code>set_yticks</code> trava a fase em 0, −45, −90, −135, −180.</li></ul>'}
+  ];
+  const bb=$('#blocks');
+  bb.innerHTML=['Visão geral'].concat(blocks.slice(1).map((b,i)=>(i+1)+' · '+b.n)).map((t,i)=>'<button data-i="'+i+'">'+t+'</button>').join('');
+  let outTxt='';
+  (function(){const ws=[1e2,1e3,1e4,1e5,1e6];outTxt='      w (rad/s)    mag_dB   phase_deg\n'+ws.map(w=>{const r=resp(w,P.R,P.L,P.C);
+    return ('   '+w.toExponential(0)).padStart(14)+r.mag.toFixed(2).padStart(11)+r.ph.toFixed(1).padStart(12);}).join('\n');})();
+  $$('#blocks button').forEach(b=>b.addEventListener('click',()=>window.__goStep(+b.dataset.i)));
+  window.__hooks=window.__hooks||{};
+  window.__hooks.s9=function(s){
+    const b=blocks[s];
+    $$('.ln',box).forEach(el=>{const n=+el.dataset.n;const act=!b||(n>=b.r[0]&&n<=b.r[1]);el.classList.toggle('dim',!!b&&!act);el.classList.toggle('act',!!b&&act);});
+    $$('#blocks button').forEach((el,i)=>el.classList.toggle('on',i===s));
+    const mc=$('#exMathCard'),out=$('#exOut');
+    if(!b){$('#exTitle').textContent='Visão geral';
+      $('#exBody').innerHTML='<p>O script segue <b>o mesmo caminho da teoria</b>:</p><ul><li>componentes → <b>H(jω)</b></li><li>H → magnitude e fase</li><li>resultados → <b>gráfico de Bode</b></li></ul><p class="note">Use → para percorrer os 6 blocos.</p>';
+      mc.style.display='none';out.style.display='none';box.scrollTop=0;return;}
+    $('#exTitle').textContent=b.t;$('#exBody').innerHTML=b.h;
+    if(b.m){mc.style.display='block';$('#exMath').innerHTML=tex(b.m);}else mc.style.display='none';
+    if(b.out){out.style.display='block';out.textContent='>>> resultado nas frequências-chave\n'+outTxt;}else out.style.display='none';
+    box.scrollTo({top:Math.max(0,(b.r[0]-2)*19),behavior:'smooth'});
+  };
+})();
+
+/* =====================================================================
+   7) Bode interativo
+   ===================================================================== */
+(function(){
+  const E12=[1,1.2,1.5,1.8,2.2,2.7,3.3,3.9,4.7,5.6,6.8,8.2];
+  const eVal=(base,i)=>+(base*E12[i%12]*Math.pow(10,Math.floor(i/12))).toPrecision(3);
+  const LW0=2,LW1=6;
+  const B={ri:24,li:12,ci:12,asym:true,focus:null,cur:null};
+  const cvM=$('#cvMag'),cvP=$('#cvPh');
+  const geo={mag:{W:800,H:300,ml:66,mr:18,mt:16,mb:6},ph:{W:800,H:250,ml:66,mr:18,mt:8,mb:46}};
+  for(const g of Object.values(geo)){g.pw=g.W-g.ml-g.mr;g.ph=g.H-g.mt-g.mb;}
+  const par=()=>({R:eVal(1,B.ri),L:eVal(1e-3,B.li),C:eVal(1e-7,B.ci)});
+  const REF={R:100,L:10e-3,C:1e-6};
+  function metrics(p){
+    const w0=1/Math.sqrt(p.L*p.C),z=p.R/2*Math.sqrt(p.C/p.L),Q=1/(2*z);let wr=null,pk=null;
+    if(z<Math.SQRT1_2){wr=w0*Math.sqrt(1-2*z*z);pk=-20*Math.log10(2*z*Math.sqrt(1-z*z));}
+    let wc=null;const T=-10*Math.log10(2),st=0.002;
+    for(let lw=0;lw<9;lw+=st){if(resp(Math.pow(10,lw),p.R,p.L,p.C).mag<T){let lo=lw-st,hi=lw;for(let k=0;k<40;k++){const m=(lo+hi)/2;if(resp(Math.pow(10,m),p.R,p.L,p.C).mag<T)hi=m;else lo=m;}wc=Math.pow(10,(lo+hi)/2);break;}}
+    return {w0,f0:w0/2/Math.PI,z,Q,wr,pk,wc};
+  }
+  const fR=v=>(v>=1000?nfp(v/1000)+' kΩ':nfp(v)+' Ω');
+  const fL=v=>nfp(v*1e3)+' mH';
+  const fC=v=>nfp(v*1e6)+' µF';
+  const unitSup=['⁰','¹','²','³','⁴','⁵','⁶','⁷','⁸'];
+  let M,p,top;
+
+  function recompute(){
+    p=par();M=metrics(p);
+    top=Math.max(20,Math.ceil(((M.pk??0)+4)/20)*20);
+    $('#oR').textContent=fR(p.R);$('#oL').textContent=fL(p.L);$('#oC').textContent=fC(p.C);
+    $('#mW0').innerHTML=nf(M.w0);$('#mF0').innerHTML=nf(M.f0);$('#mZ').innerHTML=nf(M.z);$('#mQ').innerHTML=nf(M.Q);
+    const wcTxt=M.wc?fmtW(M.wc)+' rad/s':'—';
+    $('#dPass').innerHTML='ganho 0 dB (|H|=1) até ω<sub>−3dB</sub> ≈ '+wcTxt+'; fase ≈ 0°';
+    $('#dPeak').innerHTML=M.pk!=null?'+'+nf(M.pk)+' dB em ω<sub>r</sub> ≈ '+fmtW(M.wr)+' rad/s (ζ &lt; 0,707)':'sem pico: ζ ≥ 0,707 (resposta monotônica)';
+    const r0=resp(M.w0,p.R,p.L,p.C);
+    $('#dRes').innerHTML='ω₀ = '+fmtW(M.w0)+' rad/s ⇒ fase '+nf(r0.ph)+'°, |H| = Q = '+nf(M.Q)+' ('+nf(r0.mag)+' dB)';
+    const r10=resp(M.w0*10,p.R,p.L,p.C);
+    $('#dStop').innerHTML='−40 dB/década (2 polos); em 10ω₀: '+nf(r10.mag)+' dB; fase → −180°';
+    draw();
+  }
+  function setCanvas(cv,g){cv.width=g.W*2;cv.height=g.H*2;return cv.getContext('2d');}
+  const cM=setCanvas(cvM,geo.mag),cP=setCanvas(cvP,geo.ph);
+
+  function drawPanel(ctx,g,kind){
+    const isM=kind==='mag';
+    const yMax=isM?top:10,yMin=isM?top-120:-190;
+    const X=lw=>g.ml+(lw-LW0)/(LW1-LW0)*g.pw;
+    const Y=v=>g.mt+(yMax-v)/(yMax-yMin)*g.ph;
+    ctx.setTransform(2,0,0,2,0,0);ctx.clearRect(0,0,g.W,g.H);
+    // grade
+    ctx.lineWidth=1;ctx.font='12px Segoe UI';ctx.fillStyle='#9aa7d4';
+    for(let d=LW0;d<LW1;d++)for(let m=1;m<10;m++){const x=X(d+Math.log10(m));ctx.strokeStyle=m===1?'#2f3d73':'#1a2347';ctx.beginPath();ctx.moveTo(x,g.mt);ctx.lineTo(x,g.mt+g.ph);ctx.stroke();}
+    ctx.strokeStyle='#2f3d73';ctx.beginPath();ctx.moveTo(X(LW1),g.mt);ctx.lineTo(X(LW1),g.mt+g.ph);ctx.stroke();
+    ctx.textAlign='right';
+    const ticks=isM?[]:[0,-45,-90,-135,-180];
+    if(isM){for(let v=Math.ceil(yMin/20)*20;v<=yMax;v+=20)ticks.push(v);}
+    ticks.forEach(v=>{const y=Y(v);ctx.strokeStyle=v===0?'#52639f':'#2f3d73';ctx.lineWidth=v===0?1.6:1;ctx.beginPath();ctx.moveTo(g.ml,y);ctx.lineTo(g.ml+g.pw,y);ctx.stroke();ctx.fillStyle='#9aa7d4';ctx.fillText(v,g.ml-8,y+4);});
+    ctx.save();ctx.translate(16,g.mt+g.ph/2);ctx.rotate(-Math.PI/2);ctx.textAlign='center';ctx.font='13px Segoe UI';ctx.fillStyle='#cbd5ff';
+    ctx.fillText(isM?'Magnitude (dB)':'Fase (graus)',0,0);ctx.restore();
+    if(!isM){ctx.textAlign='center';ctx.font='13px Segoe UI';ctx.fillStyle='#9aa7d4';
+      for(let d=LW0;d<=LW1;d++)ctx.fillText('10'+unitSup[d],X(d),g.mt+g.ph+18);
+      ctx.fillStyle='#cbd5ff';ctx.fillText('Frequência ω (rad/s)',g.ml+g.pw/2,g.H-8);}
+    // recorte
+    ctx.save();ctx.beginPath();ctx.rect(g.ml,g.mt,g.pw,g.ph);ctx.clip();
+    const lw0=Math.log10(M.w0);
+    // destaque (foco)
+    const f=B.focus;
+    const band=(a,b,col)=>{ctx.fillStyle=col;ctx.fillRect(X(Math.max(a,LW0)),g.mt,X(Math.min(b,LW1))-X(Math.max(a,LW0)),g.ph);};
+    if(f==='pass'&&M.wc)band(LW0,Math.log10(M.wc),'#22c55e22');
+    if(f==='stop')band(lw0,LW1,'#ef444420');
+    // assíntotas
+    if(B.asym&&isM){ctx.strokeStyle='#fbbf2499';ctx.lineWidth=1.8;ctx.setLineDash([7,5]);ctx.beginPath();
+      ctx.moveTo(X(LW0),Y(0));ctx.lineTo(X(lw0),Y(0));ctx.lineTo(X(LW1),Y(-40*(LW1-lw0)));ctx.stroke();ctx.setLineDash([]);}
+    if(B.asym&&!isM){ctx.strokeStyle='#fbbf2466';ctx.lineWidth=1.4;ctx.setLineDash([7,5]);[-90,-180].forEach(v=>{ctx.beginPath();ctx.moveTo(g.ml,Y(v));ctx.lineTo(g.ml+g.pw,Y(v));ctx.stroke();});ctx.setLineDash([]);}
+    // curva de referência
+    const same=p.R===REF.R&&Math.abs(p.L-REF.L)<1e-12&&Math.abs(p.C-REF.C)<1e-12;
+    const curve=(pp,col,lwid,dash)=>{ctx.beginPath();for(let k=0;k<=500;k++){const lw=LW0+(LW1-LW0)*k/500;const r=resp(Math.pow(10,lw),pp.R,pp.L,pp.C);
+        const x=X(lw),y=Y(isM?r.mag:r.ph);k?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.strokeStyle=col;ctx.lineWidth=lwid;ctx.setLineDash(dash||[]);ctx.stroke();ctx.setLineDash([]);};
+    if(!same)curve(REF,'#8b95bd88',2,[5,5]);
+    // linha de ω0
+    const wl=f==='res'?3:1.6;
+    ctx.strokeStyle='#ef4444';ctx.lineWidth=wl;ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(X(lw0),g.mt);ctx.lineTo(X(lw0),g.mt+g.ph);ctx.stroke();ctx.setLineDash([]);
+    // curva principal
+    ctx.shadowColor=isM?'#60a5fa':'#34d399';ctx.shadowBlur=10;
+    curve(p,isM?'#60a5fa':'#34d399',3.4);ctx.shadowBlur=0;
+    ctx.restore();
+    // rótulo ω0
+    if(lw0>=LW0&&lw0<=LW1){ctx.fillStyle='#ff7b7b';ctx.font='bold 12px Segoe UI';ctx.textAlign=lw0>5?'right':'left';
+      if(isM)ctx.fillText('ω₀ = '+fmtW(M.w0)+' rad/s',X(lw0)+(lw0>5?-6:6),g.mt+14);}
+    // marcadores
+    const dot=(lw,v,col,r)=>{const x=X(lw),y=Y(v);ctx.fillStyle=col;ctx.strokeStyle='#0b1126';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,r||5,0,7);ctx.fill();ctx.stroke();return [x,y];};
+    const ring=(x,y)=>{ctx.strokeStyle='#fbbf24';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x,y,13+2*Math.sin(Date.now()/250),0,7);ctx.stroke();};
+    const label=(t,x,y,col,al)=>{ctx.font='bold 12.5px Segoe UI';ctx.textAlign=al||'left';ctx.fillStyle=col||'#fff';ctx.fillText(t,x,y);};
+    if(isM){
+      if(M.wr&&M.pk!=null){const lr=Math.log10(M.wr);const [x,y]=dot(lr,M.pk,'#fbbf24');if(f==='peak'){ring(x,y);label('pico +'+nfp(M.pk)+' dB',x-16,y-18,'#fbbf24','right');}}
+      else if(f==='peak')label('sem pico de ressonância (ζ ≥ 0,707)',X(lw0)-10,Y(-14),'#fbbf24','right');
+      if(M.wc){const lc=Math.log10(M.wc);const [x,y]=dot(lc,-3.01,'#a78bfa',4);if(f==='pass')label('−3 dB @ '+fmtW(M.wc),x+10,y-10,'#c4b5fd');}
+      if(f==='pass'){label('banda de passagem · ganho 0 dB',X(LW0)+10,Y(0)+22,'#4ade80');}
+      if(f==='res'){const r0=resp(M.w0,p.R,p.L,p.C);const [x,y]=dot(lw0,r0.mag,'#ef4444',6);ring(x,y);label('|H(jω₀)| = Q = '+nfp(M.Q)+' ('+nfp(r0.mag)+' dB)',x+(lw0>5?-18:18),y+(r0.mag>top-30?26:-14),'#ff9a9a',lw0>5?'right':'left');}
+      if(f==='stop'){const lx=Math.min(LW1-0.6,lw0+0.9);label('−40 dB/década',X(lx)+8,Y(-40*(lx-lw0))-12,'#ff9a9a');label('banda de rejeição',X(LW1)-10,g.mt+g.ph-10,'#ff9a9a','right');}
+    }else{
+      if(lw0>=LW0&&lw0<=LW1){const [x,y]=dot(lw0,-90,'#ef4444',6);if(f==='res'){ring(x,y);label('−90° em ω₀',x+16,y-12,'#ff9a9a');}}
+      if(f==='pass')label('≈ 0°: saída acompanha a entrada',X(LW0)+10,Y(0)+20,'#4ade80');
+      if(f==='stop')label('→ −180°: saída invertida',X(LW1)-10,Y(-180)-10,'#ff9a9a','right');
+    }
+    // cursor
+    if(B.cur!=null){const lw=B.cur,w=Math.pow(10,lw),r=resp(w,p.R,p.L,p.C),x=X(lw);
+      ctx.strokeStyle='#ffffffaa';ctx.lineWidth=1;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(x,g.mt);ctx.lineTo(x,g.mt+g.ph);ctx.stroke();ctx.setLineDash([]);
+      const v=isM?r.mag:r.ph;dot(lw,v,'#fff',5);
+      const txt=(isM?'ω = '+fmtW(w)+' rad/s   |H| = '+nfp(r.mag)+' dB ('+nfp(Math.pow(10,r.mag/20))+')':'f = '+nfp(w/2/Math.PI)+' Hz   ∠H = '+nfp(r.ph)+'°');
+      ctx.font='bold 12.5px Segoe UI';const tw=ctx.measureText(txt).width+16;let bx=x+12;if(bx+tw>g.ml+g.pw)bx=x-12-tw;
+      const by=isM?g.mt+26:g.mt+10;ctx.fillStyle='#050813ee';ctx.strokeStyle='#52639f';ctx.lineWidth=1;
+      ctx.beginPath();ctx.roundRect(bx,by,tw,24,6);ctx.fill();ctx.stroke();ctx.fillStyle='#fff';ctx.textAlign='left';ctx.fillText(txt,bx+8,by+16);}
+  }
+  function draw(){drawPanel(cM,geo.mag,'mag');drawPanel(cP,geo.ph,'ph');}
+
+  // interação
+  function ptr(e,cv,g){const r=cv.getBoundingClientRect(),s=r.width/g.W;const x=(e.clientX-r.left)/s;
+    if(x<g.ml||x>g.ml+g.pw)return null;return LW0+(x-g.ml)/g.pw*(LW1-LW0);}
+  [[cvM,geo.mag],[cvP,geo.ph]].forEach(([cv,g])=>{
+    cv.addEventListener('pointermove',e=>{B.cur=ptr(e,cv,g);draw();});
+    cv.addEventListener('pointerleave',()=>{B.cur=null;draw();});
+  });
+  const sR=$('#rR'),sL=$('#rL'),sC=$('#rC');
+  const sync=()=>{sR.value=B.ri;sL.value=B.li;sC.value=B.ci;};
+  [[sR,'ri'],[sL,'li'],[sC,'ci']].forEach(([s,k])=>{s.addEventListener('input',()=>{B[k]=+s.value;recompute();});s.addEventListener('change',()=>s.blur());});
+  $$('.pre button').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.p;B.li=12;B.ci=12;B.ri=k==='ex'?24:k==='low'?12:28;sync();recompute();}));
+  $('#chAsym').addEventListener('change',e=>{B.asym=e.target.checked;draw();});
+  function setFocus(f){B.focus=B.focus===f?null:f;$$('.ft').forEach(b=>b.classList.toggle('on',b.dataset.f===B.focus));draw();}
+  $$('.ft').forEach(b=>b.addEventListener('click',()=>setFocus(b.dataset.f)));
+  window.__hooks=window.__hooks||{};
+  window.__hooks.s10=function(s){const f=[null,'pass','peak','res','stop'][s];B.focus=f;$$('.ft').forEach(b=>b.classList.toggle('on',b.dataset.f===f));draw();};
+  setInterval(()=>{if(B.focus==='peak'||B.focus==='res')draw();},60);
+  sync();recompute();
+})();
+
+/* =====================================================================
+   8) Navegação, cronômetro e roteiro
+   ===================================================================== */
+const SL=[
+ {id:'s1',t:20,name:'Capa',note:'Apresentar o grupo e o roteiro: do enunciado ao diagrama de Bode, em 10 minutos.'},
+ {id:'s2',t:50,name:'Enunciado',note:'Circuito RLC série; entrada v_i(t) e saída no capacitor. Passe o mouse em R, L e C para ver a lei de cada componente. Três pedidos: EDO, H(jω) e Bode.'},
+ {id:'s3',t:80,name:'Modelagem',note:'KVL soma as quedas = fonte. Como a corrente é a mesma, i = C·dVc/dt entra em R e L. O resultado é a EDO de 2ª ordem: L entra com a 2ª derivada, R com a 1ª e C com a própria saída.'},
+ {id:'s4',t:60,name:'Função de transferência',note:'Trocar derivadas por jω transforma a EDO em álgebra. Coloca Y em evidência e divide por Vi. Com j² = −1 chegamos a H = 1/(a + jb).'},
+ {id:'s5',t:60,name:'Magnitude',note:'Módulo da divisão é divisão dos módulos: 1/√(a²+b²). Em dB, o log de 1 some e a raiz vira ½, então 20·½ = 10. Mexa o slider: o fasor D cresce com ω, então |H| cai.'},
+ {id:'s6',t:50,name:'Fase',note:'Fase total = fase do numerador (0) − fase do denominador. Resulta em −arctan(b/a). Mostrar o fasor girando de 0° a 180°; cuidado com o quadrante, por isso np.angle no código.'},
+ {id:'s7',t:50,name:'Ressonância',note:'Ressonância quando a parte real do denominador zera: ω0 = 1/√(LC). Ali D é imaginário puro: fase −90° e |H| = Q. Use os botões ω≪ω0, ω0 e ω≫ω0.'},
+ {id:'s8',t:50,name:'Valores comerciais',note:'Valores comerciais: 100 Ω, 10 mH, 1 µF. LC = 1e-8 e RC = 1e-4, então ω0 = 10⁴ rad/s (≈1,59 kHz). ζ = 0,5: subamortecido, por isso haverá pico.'},
+ {id:'s9',t:90,name:'Código Python',note:'Percorrer os 6 blocos: valores físicos, vetor de frequências log, H vetorizado (1j), magnitude em dB e fase com np.angle, e o gráfico com semilogx e linha em ω0.'},
+ {id:'s10',t:90,name:'Bode interativo',note:'Passo a passo: 1) banda de passagem 0 dB, 2) pico de ressonância, 3) ω0 com −90°, 4) rejeição a −40 dB/década e fase → −180°. Finalizar variando R, L e C e concluindo: filtro passa-baixa de 2ª ordem.'}
+];
+const TOTAL=SL.reduce((a,s)=>a+s.t,0);
+const stage=$('#stage'),slides=SL.map(s=>document.getElementById(s.id));
+const hooks=window.__hooks||{};
+let cur=0,step=0;
+const maxStep=el=>el.dataset.steps?+el.dataset.steps:Math.max(0,...$$('[data-s]',el).map(e=>+e.dataset.s));
+
+// HUD
+const segs=$('#segs');
+SL.forEach((s,i)=>{const d=document.createElement('div');d.className='seg';d.style.flex=s.t;d.title=s.name+' · '+fmtT(s.t);d.innerHTML='<i></i><span>'+(i+1)+'</span>';d.addEventListener('click',()=>show(i,0));segs.appendChild(d);});
+function fmtT(sec){sec=Math.max(0,Math.round(sec));return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');}
+
+function show(i,s){
+  i=Math.max(0,Math.min(SL.length-1,i));const el=slides[i];const mx=maxStep(el);s=Math.max(0,Math.min(mx,s));
+  cur=i;step=s;
+  slides.forEach((e,k)=>e.classList.toggle('active',k===i));
+  $$('[data-s]',el).forEach(e=>e.classList.toggle('on',+e.dataset.s<=s));
+  if(hooks[el.id])hooks[el.id](s);
+  $('#stephint').textContent=mx?('passo '+s+'/'+mx):'';
+  $('#sname').textContent=(i+1)+'/'+SL.length+' · '+SL[i].name+' · alvo '+fmtT(SL[i].t);
+  $('#notesTxt').textContent=SL[i].note;
+  $$('.seg').forEach((d,k)=>{d.classList.toggle('cur',k===i);d.classList.toggle('done',k<i);});
+  try{history.replaceState(null,'','#'+(i+1)+(s?'.'+s:''));}catch(e){}
+}
+window.__goStep=s=>show(cur,s);
+function next(){startClock();if(step<maxStep(slides[cur]))show(cur,step+1);else if(cur<SL.length-1)show(cur+1,0);}
+function prev(){if(step>0)show(cur,step-1);else if(cur>0)show(cur-1,maxStep(slides[cur-1]));}
+
+// escala do palco
+function fit(){const W=innerWidth,H=innerHeight-44,s=Math.min(W/1280,H/720);
+  stage.style.transform='scale('+s+')';stage.style.left=((W-1280*s)/2)+'px';stage.style.top=((H-720*s)/2)+'px';}
+addEventListener('resize',fit);fit();
+
+// cronômetro
+let elapsed=0,running=false,last=0,slideT=SL.map(()=>0);
+function startClock(){if(!running&&elapsed===0)toggleClock(true);}
+function toggleClock(force){running=force!==undefined?force:!running;last=performance.now();$('#bPlay').style.borderColor=running?'#34d399':'';}
+setInterval(()=>{const now=performance.now();if(running){const dt=(now-last)/1000;elapsed+=dt;slideT[cur]+=dt;}last=now;
+  let before=0;for(let k=0;k<cur;k++)before+=SL[k].t;const late=elapsed>before+SL[cur].t+8&&running;
+  const c=$('#clock');c.textContent=fmtT(elapsed)+' / '+fmtT(TOTAL);c.classList.toggle('late',elapsed>TOTAL||late);
+  $$('.seg').forEach((d,k)=>{const f=Math.min(1,slideT[k]/SL[k].t);const b=$('i',d);b.style.width=(f*100)+'%';b.classList.toggle('over',slideT[k]>SL[k].t);});},250);
+
+$('#bNext').onclick=next;$('#bPrev').onclick=prev;$('#bPlay').onclick=()=>toggleClock();
+$('#bReset').onclick=()=>{elapsed=0;slideT=SL.map(()=>0);running=false;$('#bPlay').style.borderColor='';};
+$('#bNotes').onclick=()=>$('#notes').classList.toggle('show');
+const full=()=>{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();};
+$('#bFull').onclick=full;
+addEventListener('keydown',e=>{
+  if(e.target.matches&&e.target.matches('input[type=range]')&&(e.key==='ArrowLeft'||e.key==='ArrowRight'))return;
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  switch(e.key){
+    case 'ArrowRight':case 'PageDown':case ' ':case 'Enter':e.preventDefault();next();break;
+    case 'ArrowLeft':case 'PageUp':case 'Backspace':e.preventDefault();prev();break;
+    case 'Home':show(0,0);break;case 'End':show(SL.length-1,0);break;
+    case 'f':case 'F':full();break;case 'n':case 'N':$('#notes').classList.toggle('show');break;
+    case 't':case 'T':toggleClock();break;
+  }
+});
+// o clique no palco (fora de controles) avança
+stage.addEventListener('dblclick',e=>{if(!e.target.closest('canvas,input,button,svg,.card,.phasor,#code'))next();});
+
+// início (aceita #slide.passo)
+const m=/^#(\d+)(?:\.(\d+))?$/.exec(location.hash);
+if(m)show(+m[1]-1,+(m[2]||0));else show(0,0);
+})();
+</script>
+</body>
+</html>
