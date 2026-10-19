@@ -5,20 +5,19 @@
 >
 > Disciplina: Sinais e Sistemas
 ## Enunciado do Problema
-- Em uma malha elétrica composta por um resistor R, um indutor L e um capacitor C ligados em série, aplica-se uma tensão de entrada vi(t). A saída de interesse é a tensão sobre o capacitor vC (t) = y(t). 
+- Em uma malha elétrica composta por um resistor $R$, um indutor $L$ e um capacitor $C$ ligados em série, aplica-se uma tensão de entrada $V_i(t)$. A saída de interesse é a tensão sobre o capacitor $V_c(t) = Y(t)$. 
 
 ![CircuitoRLCSérie](images/rlc.png)
 
-Pede-se:
+*Pede-se:*
 
 1. Modelar o circuito elétrico utilizando a Lei das Tensões de Kirchhoff (KVL) e as
 relações dos componentes para montar a EDO linear de segunda ordem.
 
-1. Utilizar o operador harmônico (jω) para determinar a Função de Transferência
-H(jω) = Y (jω)
-Vi(jω).
+2. Utilizar o operador harmônico $(j\omega)$ para determinar a Função de Transferência
+$H(j\omega) = \frac{Y(j\omega)}{V_i(j\omega)}$ .
 
-1. Analisar o comportamento em frequência com o diagrama de Bode e o respectivo
+3. Analisar o comportamento em frequência com o diagrama de Bode e o respectivo
 script computacional.
 
 ## Modelagem da EDO
@@ -73,7 +72,7 @@ Para determinar a Função de Transferência utilizando o operador harmônico, s
 As transformações diretas são:
 
 * $Y(t) \rightarrow Y(j\omega)$
-* $\frac{dY(t)}{dt} \rightarrow j\omega Y(j\omega)$
+* $\frac{dY(t)}{dt} \rightarrow (j\omega) Y(j\omega)$
 * $\frac{d^2Y(t)}{dt^2} \rightarrow (j\omega)^2 Y(j\omega)$
 
 **1. Substituição na EDO**
@@ -111,10 +110,6 @@ $$H(j\omega) = \frac{1}{(1 - LC\omega^2) + j\omega RC}$$
 
 Nossa função de partida é:
 
-
-
-
-
 $$H(j\omega) = \frac{1}{(1 - LC\omega^2) + j(\omega RC)}$$
 
 Aqui temos claramente o formato $Z = a + jb$ para o numerador e para o denominador:
@@ -128,12 +123,12 @@ Aqui temos claramente o formato $Z = a + jb$ para o numerador e para o denominad
 
 A magnitude de uma divisão é a divisão das magnitudes. Vamos calcular a magnitude do numerador e do denominador separadamente.
 
-* **Módulo do Numerador ($\vert{}N\vert{}$):**
+* **Módulo do Numerador ( $\vert{}N\vert{}$):**
 
 $$\vert{}N\vert{} = \sqrt{1^2 + 0^2} = \sqrt{1} = 1$$
 
 
-* **Módulo do Denominador ($\vert{}D\vert{}$):**
+* **Módulo do Denominador ( $\vert{}D\vert{}$):**
 
 $$\vert{}D\vert{} = \sqrt{(1 - LC\omega^2)^2 + (\omega RC)^2}$$
 
@@ -151,9 +146,9 @@ $$\vert{}H(j\omega)\vert{} = \frac{1}{\sqrt{(1 - LC\omega^2)^2 + (\omega RC)^2}}
 Para transformar a magnitude para o Diagrama de Bode, aplicamos $20\log_{10}$ em toda a função.
 
 
-$$\vert{}H(j\omega)\vert{}_{dB} = 20\log_{10}\left( \frac{1}{\sqrt{(1 - LC\omega^2)^2 + (\omega RC)^2}} \right)$$
+$$\vert{}H(j\omega)\vert{}_{dB} = 20\log_{10}\left( \frac{1}{\sqrt{(1 - LC\omega^2)^2 + ( \omega RC)^2}} \right )$$
 
-Pela propriedade dos logaritmos para divisões ($\log(\frac{x}{y}) = \log(x) - \log(y)$), separamos o numerador do denominador:
+Pela propriedade dos logaritmos para divisões ( $\log(\frac{x}{y}) = \log(x) - \log(y)$ ), separamos o numerador do denominador:
 
 
 $$\vert{}H(j\omega)\vert{}_{dB} = 20\log_{10}(1) - 20\log_{10}\left( \sqrt{(1 - LC\omega^2)^2 + (\omega RC)^2} \right)$$
@@ -188,7 +183,7 @@ $$LC\omega^2 = 1 \implies \omega^2 = \frac{1}{LC} \implies \omega = \frac{1}{\sq
 
 ---
 
-### Passo 5: Encontrar a Diferença de Fases 
+### Passo 5: Encontrar a Diferença de Fases ( $\theta = \text{arctg}(b/a)$ )
 
 A regra para divisão de números complexos diz que **a fase total é a fase do numerador menos a fase do denominador**.
 
@@ -202,7 +197,7 @@ $$\theta_N = \arctan\left(\frac{0}{1}\right) = \arctan(0) = 0^\circ$$
 $$\theta_D = \arctan\left( \frac{\omega RC}{1 - LC\omega^2} \right)$$
 
 
-* **Fase Total ($\angle H(j\omega)$):**
+* **Fase Total ( $\angle H(j\omega)$ ):**
 
 $$\angle H(j\omega) = \theta_N - \theta_D = 0^\circ - \arctan\left( \frac{\omega RC}{1 - LC\omega^2} \right)$$
 
@@ -249,7 +244,7 @@ Aplicando $20\log_{10}$ para converter em decibéis e descendo a raiz quadrada c
 
 $$\vert{}H(j\omega)\vert{}_{dB} = -10 \log_{10} \left( (1 - 10^{-8}\omega^2)^2 + 10^{-8}\omega^2 \right)$$
 
-*(Nota: $(10^{-4}\omega)^2$ virou $10^{-8}\omega^2$ na parte imaginária ao quadrado).*
+> (Nota: $(10^{-4}\omega)^2$ virou $10^{-8}\omega^2$ na parte imaginária ao quadrado).
 
 ### 4. Cálculo da Fase Angular
 
