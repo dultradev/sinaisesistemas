@@ -188,7 +188,7 @@ $$LC\omega^2 = 1 \implies \omega^2 = \frac{1}{LC} \implies \omega = \frac{1}{\sq
 
 ---
 
-### Passo 5: Encontrar a Diferença de Fases ($\theta = \text{arctg}(b/a)$)
+### Passo 5: Encontrar a Diferença de Fases 
 
 A regra para divisão de números complexos diz que **a fase total é a fase do numerador menos a fase do denominador**.
 
